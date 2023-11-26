@@ -228,7 +228,7 @@ func (b *bufioR) PeekLine(offset int) (bufioLn, error) {
 		}
 		start = b.r + offset
 	}
-	return bufioLn(b.buf[start : start+index+2]), nil
+	return b.buf[start : start+index+2], nil
 }
 
 // ReadLine returns the next line until CRLF
@@ -238,7 +238,7 @@ func (b *bufioR) ReadLine() (bufioLn, error) {
 	return line, err
 }
 
-// Reset resets the reader with an new interface
+// Reset resets the reader with a new interface
 func (b *bufioR) Reset(r io.Reader) {
 	b.reset(b.buf, r)
 }
@@ -553,7 +553,7 @@ func (b *bufioW) CopyBulk(src io.Reader, n int64) error {
 		return err
 	}
 	b.buf = b.buf[:cap(b.buf)]
-	_, err := io.CopyBuffer(b, io.LimitReader(src, int64(n)), b.buf)
+	_, err := io.CopyBuffer(b, io.LimitReader(src, n), b.buf)
 	b.buf = b.buf[:0]
 	if err != nil {
 		return err
@@ -571,7 +571,7 @@ func (b *bufioW) Flush() error {
 	return err
 }
 
-// Reset resets the writer with an new interface
+// Reset resets the writer with a new interface
 func (b *bufioW) Reset(w io.Writer) {
 	b.reset(b.buf, w)
 }

@@ -38,7 +38,7 @@ func newClient(cn net.Conn) *Client {
 	return c
 }
 
-// GetClient retrieves the client from a the context.
+// GetClient retrieves the client from a context.
 // This function may return nil if a client is not set.
 func GetClient(ctx context.Context) *Client {
 	if ctx != nil {

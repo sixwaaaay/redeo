@@ -8,74 +8,74 @@ import (
 )
 
 // Append implements ResponseWriter
-func (w *bufioW) Append(v interface{}) error {
+func (b *bufioW) Append(v interface{}) error {
 	switch v := v.(type) {
 	case nil:
-		w.AppendNil()
+		b.AppendNil()
 	case CustomResponse:
-		v.AppendTo(w)
+		v.AppendTo(b)
 	case error:
 		msg := v.Error()
 		if !strings.HasPrefix(msg, "ERR ") {
 			msg = "ERR " + msg
 		}
-		w.AppendError(msg)
+		b.AppendError(msg)
 	case bool:
 		if v {
-			w.AppendInt(1)
+			b.AppendInt(1)
 		} else {
-			w.AppendInt(0)
+			b.AppendInt(0)
 		}
 	case int:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case int8:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case int16:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case int32:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case int64:
-		w.AppendInt(v)
+		b.AppendInt(v)
 	case uint:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case uint8:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case uint16:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case uint32:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case uint64:
-		w.AppendInt(int64(v))
+		b.AppendInt(int64(v))
 	case string:
-		w.AppendBulkString(v)
+		b.AppendBulkString(v)
 	case []byte:
-		w.AppendBulk(v)
+		b.AppendBulk(v)
 	case CommandArgument:
-		w.AppendBulk(v)
+		b.AppendBulk(v)
 	case float32:
-		w.AppendInlineString(strconv.FormatFloat(float64(v), 'f', -1, 32))
+		b.AppendInlineString(strconv.FormatFloat(float64(v), 'f', -1, 32))
 	case float64:
-		w.AppendInlineString(strconv.FormatFloat(v, 'f', -1, 64))
+		b.AppendInlineString(strconv.FormatFloat(v, 'f', -1, 64))
 	default:
 		switch reflect.TypeOf(v).Kind() {
 		case reflect.Slice:
 			s := reflect.ValueOf(v)
 
-			w.AppendArrayLen(s.Len())
+			b.AppendArrayLen(s.Len())
 			for i := 0; i < s.Len(); i++ {
-				if err := w.Append(s.Index(i).Interface()); err != nil {
+				if err := b.Append(s.Index(i).Interface()); err != nil {
 					return err
 				}
 			}
 		case reflect.Map:
 			s := reflect.ValueOf(v)
 
-			w.AppendArrayLen(s.Len() * 2)
+			b.AppendArrayLen(s.Len() * 2)
 			for _, key := range s.MapKeys() {
-				if err := w.Append(key.Interface()); err != nil {
+				if err := b.Append(key.Interface()); err != nil {
 					return err
 				}
-				if err := w.Append(s.MapIndex(key).Interface()); err != nil {
+				if err := b.Append(s.MapIndex(key).Interface()); err != nil {
 					return err
 				}
 			}
