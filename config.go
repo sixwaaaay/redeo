@@ -1,6 +1,9 @@
 package redeo
 
-import "time"
+import (
+	"net"
+	"time"
+)
 
 // Config holds the server configuration
 type Config struct {
@@ -22,4 +25,6 @@ type Config struct {
 	// On other kernels the period depends on the kernel configuration.
 	// Default: 0 (disabled)
 	TCPKeepAlive time.Duration
+
+	Listener net.Listener
 }

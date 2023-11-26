@@ -1,6 +1,7 @@
 package redeo
 
 import (
+	"context"
 	"net"
 	"strings"
 	"sync"
@@ -14,8 +15,10 @@ type Server struct {
 	config *Config
 	info   *ServerInfo
 
-	cmds map[string]interface{}
-	mu   sync.RWMutex
+	cmds     map[string]interface{}
+	mu       sync.RWMutex
+	wg       sync.WaitGroup
+	listener net.Listener
 }
 
 // NewServer creates a new server instance
@@ -25,9 +28,10 @@ func NewServer(config *Config) *Server {
 	}
 
 	return &Server{
-		config: config,
-		info:   newServerInfo(),
-		cmds:   make(map[string]interface{}),
+		config:   config,
+		info:     newServerInfo(),
+		cmds:     make(map[string]interface{}),
+		listener: config.Listener,
 	}
 }
 
@@ -61,6 +65,7 @@ func (srv *Server) HandleStreamFunc(name string, fn StreamHandlerFunc) {
 // Serve accepts incoming connections on a listener, creating a
 // new service goroutine for each.
 func (srv *Server) Serve(lis net.Listener) error {
+	srv.listener = lis
 	for {
 		cn, err := lis.Accept()
 		if err != nil {
@@ -74,7 +79,12 @@ func (srv *Server) Serve(lis net.Listener) error {
 			}
 		}
 
-		go srv.serveClient(newClient(cn))
+		//go srv.serveClient(newClient(cn))
+		srv.wg.Add(1)
+		go func() {
+			srv.serveClient(newClient(cn))
+			srv.wg.Done()
+		}()
 	}
 }
 
@@ -154,4 +164,20 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 		err = c.wr.Flush()
 	}
 	return
+}
+
+// Shutdown closes the server
+func (srv *Server) Shutdown(ctx context.Context) error {
+	ch := make(chan struct{})
+	go func() {
+		defer close(ch)
+		srv.wg.Wait()
+	}()
+	select {
+	case <-ch:
+		return srv.listener.Close()
+
+	case <-ctx.Done():
+		return srv.listener.Close()
+	}
 }
